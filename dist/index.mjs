@@ -1,307 +1,9 @@
-/******/ (() => { // webpackBootstrap
-/******/ 	var __webpack_modules__ = ({
-
-/***/ 3109:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const os = __importStar(__nccwpck_require__(2037));
-const path = __importStar(__nccwpck_require__(1017));
-const util = __importStar(__nccwpck_require__(3837));
-const fs = __importStar(__nccwpck_require__(7147));
-const toolCache = __importStar(__nccwpck_require__(7784));
-const core = __importStar(__nccwpck_require__(2186));
-const defaultProcessorArchType = 'amd64';
-const defaultKubectlVersion = '1.24.10';
-const defaultKustomizeVersion = '5.0.0';
-const defaultHelmVersion = '3.11.1';
-const defaultKubevalVersion = '0.16.1';
-const defaultKubeconformVersion = '0.5.0';
-const defaultConftestVersion = '0.39.0';
-const defaultYqVersion = '4.30.7';
-const defaultRancherVersion = '2.7.0';
-const defaultTiltVersion = '0.31.2';
-const defaultSkaffoldVersion = '2.1.0';
-const defaultKubeScoreVersion = '1.16.1';
-const Tools = [
-    {
-        name: 'kubectl',
-        defaultVersion: defaultKubectlVersion,
-        isArchived: false,
-        supportArm: true,
-        commandPathInPackage: 'kubectl'
-    },
-    {
-        name: 'kustomize',
-        defaultVersion: defaultKustomizeVersion,
-        isArchived: true,
-        supportArm: true,
-        commandPathInPackage: 'kustomize'
-    },
-    {
-        name: 'helm',
-        defaultVersion: defaultHelmVersion,
-        isArchived: true,
-        supportArm: true,
-        commandPathInPackage: 'linux-{arch}/helm'
-    },
-    {
-        name: 'kubeval',
-        defaultVersion: defaultKubevalVersion,
-        isArchived: true,
-        supportArm: false,
-        commandPathInPackage: 'kubeval'
-    },
-    {
-        name: 'kubeconform',
-        defaultVersion: defaultKubeconformVersion,
-        isArchived: true,
-        supportArm: true,
-        commandPathInPackage: 'kubeconform'
-    },
-    {
-        name: 'conftest',
-        defaultVersion: defaultConftestVersion,
-        isArchived: true,
-        supportArm: true,
-        commandPathInPackage: 'conftest'
-    },
-    {
-        name: 'yq',
-        defaultVersion: defaultYqVersion,
-        isArchived: false,
-        supportArm: true,
-        commandPathInPackage: 'yq_linux_{arch}'
-    },
-    {
-        name: 'rancher',
-        defaultVersion: defaultRancherVersion,
-        isArchived: true,
-        supportArm: true,
-        commandPathInPackage: 'rancher-v{ver}/rancher'
-    },
-    {
-        name: 'tilt',
-        defaultVersion: defaultTiltVersion,
-        isArchived: true,
-        supportArm: true,
-        commandPathInPackage: 'tilt'
-    },
-    {
-        name: 'skaffold',
-        defaultVersion: defaultSkaffoldVersion,
-        isArchived: false,
-        supportArm: true,
-        commandPathInPackage: 'skaffold-linux-{arch}'
-    },
-    {
-        name: 'kube-score',
-        defaultVersion: defaultKubeScoreVersion,
-        isArchived: false,
-        supportArm: true,
-        commandPathInPackage: 'kube-score'
-    }
-];
-// Replace all {ver} and {arch} placeholders in the source format string with the actual values
-function replacePlaceholders(format, version, archType) {
-    return format.replace(/{ver}|{arch}/g, match => {
-        return match === '{ver}' ? version : archType;
-    });
-}
-function getDownloadURL(commandName, version, archType) {
-    let actualArchType = archType;
-    let urlFormat = '';
-    switch (commandName) {
-        case 'kubectl':
-            urlFormat =
-                'https://storage.googleapis.com/kubernetes-release/release/v{ver}/bin/linux/{arch}/kubectl';
-            break;
-        case 'kustomize':
-            urlFormat =
-                'https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv{ver}/kustomize_v{ver}_linux_{arch}.tar.gz';
-            break;
-        case 'helm':
-            urlFormat = 'https://get.helm.sh/helm-v{ver}-linux-{arch}.tar.gz';
-            break;
-        case 'kubeval':
-            actualArchType = 'amd64'; // kubeval only supports amd64
-            urlFormat =
-                'https://github.com/instrumenta/kubeval/releases/download/v{ver}/kubeval-linux-{arch}.tar.gz';
-            break;
-        case 'kubeconform':
-            urlFormat =
-                'https://github.com/yannh/kubeconform/releases/download/v{ver}/kubeconform-linux-{arch}.tar.gz';
-            break;
-        case 'conftest':
-            actualArchType = archType === 'arm64' ? archType : 'x86_64';
-            urlFormat =
-                'https://github.com/open-policy-agent/conftest/releases/download/v{ver}/conftest_{ver}_Linux_{arch}.tar.gz';
-            break;
-        case 'yq':
-            urlFormat =
-                'https://github.com/mikefarah/yq/releases/download/v{ver}/yq_linux_{arch}';
-            break;
-        case 'rancher':
-            actualArchType = archType === 'arm64' ? 'arm' : archType;
-            urlFormat =
-                'https://github.com/rancher/cli/releases/download/v{ver}/rancher-linux-{arch}-v{ver}.tar.gz';
-            break;
-        case 'tilt':
-            actualArchType = archType === 'arm64' ? archType : 'x86_64';
-            urlFormat =
-                'https://github.com/tilt-dev/tilt/releases/download/v{ver}/tilt.{ver}.linux.{arch}.tar.gz';
-            break;
-        case 'skaffold':
-            urlFormat =
-                'https://github.com/GoogleContainerTools/skaffold/releases/download/v{ver}/skaffold-linux-{arch}';
-            break;
-        case 'kube-score':
-            urlFormat =
-                'https://github.com/zegl/kube-score/releases/download/v{ver}/kube-score_{ver}_linux_{arch}';
-            break;
-        default:
-            return '';
-    }
-    return replacePlaceholders(urlFormat, version, actualArchType);
-}
-function downloadTool(version, archType, tool) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let cachedToolPath = toolCache.find(tool.name, version);
-        let commandPathInPackage = tool.commandPathInPackage;
-        let commandPath = '';
-        if (!cachedToolPath) {
-            const downloadURL = getDownloadURL(tool.name, version, archType);
-            try {
-                const packagePath = yield toolCache.downloadTool(downloadURL);
-                if (tool.isArchived) {
-                    const extractTarBaseDirPath = util.format('%s_%s', packagePath, tool.name);
-                    fs.mkdirSync(extractTarBaseDirPath);
-                    const extractedDirPath = yield toolCache.extractTar(packagePath, extractTarBaseDirPath);
-                    commandPathInPackage = replacePlaceholders(commandPathInPackage, version, archType);
-                    commandPath = util.format('%s/%s', extractedDirPath, commandPathInPackage);
-                }
-                else {
-                    commandPath = packagePath;
-                }
-            }
-            catch (exception) {
-                throw new Error(`Download ${tool.name} Failed! (url: ${downloadURL})`);
-            }
-            cachedToolPath = yield toolCache.cacheFile(commandPath, tool.name, tool.name, version);
-            // eslint-disable-next-line no-console
-            console.log(`${tool.name} version '${version}' has been cached`);
-        }
-        else {
-            // eslint-disable-next-line no-console
-            console.log(`Found in cache: ${tool.name} version '${version}'`);
-        }
-        const cachedCommand = path.join(cachedToolPath, tool.name);
-        fs.chmodSync(cachedCommand, '777');
-        return cachedCommand;
-    });
-}
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!os.type().match(/^Linux/)) {
-            throw new Error('The action only support Linux OS!');
-        }
-        let failFast = true;
-        if (core.getInput('fail-fast', { required: false }).toLowerCase() === 'false') {
-            failFast = false;
-        }
-        let archType = defaultProcessorArchType;
-        if (core.getInput('arch-type', { required: false }).toLowerCase() === 'arm64') {
-            archType = 'arm64';
-        }
-        let setupToolList = [];
-        const setupTools = core.getInput('setup-tools', { required: false }).trim();
-        if (setupTools) {
-            setupToolList = setupTools
-                .split('\n')
-                .map(function (x) {
-                return x.trim();
-            })
-                .filter(x => x !== '');
-        }
-        // eslint-disable-next-line github/array-foreach
-        Tools.forEach(function (tool) {
-            return __awaiter(this, void 0, void 0, function* () {
-                let toolPath = '';
-                // By default, the action setup all supported Kubernetes tools, which mean
-                // all tools can be setup when setuptools does not have any elements.
-                if (setupToolList.length === 0 || setupToolList.includes(tool.name)) {
-                    let toolVersion = core
-                        .getInput(tool.name, { required: false })
-                        .toLowerCase();
-                    if (toolVersion && toolVersion.startsWith('v')) {
-                        toolVersion = toolVersion.substr(1);
-                    }
-                    if (!toolVersion) {
-                        toolVersion = tool.defaultVersion;
-                    }
-                    if (archType === 'arm64' && !tool.supportArm) {
-                        // eslint-disable-next-line no-console
-                        console.log(`The ${tool.name} does not support arm64 architecture, skip it`);
-                        return;
-                    }
-                    try {
-                        const cachedPath = yield downloadTool(toolVersion, archType, tool);
-                        core.addPath(path.dirname(cachedPath));
-                        toolPath = cachedPath;
-                    }
-                    catch (exception) {
-                        if (failFast) {
-                            // eslint-disable-next-line no-console
-                            console.log(`Exiting immediately (fail fast) - [Reason] ${exception}`);
-                            process.exit(1);
-                        }
-                    }
-                }
-                core.setOutput(`${tool.name}-path`, toolPath);
-            });
-        });
-    });
-}
-run().catch(core.setFailed);
-
-
-/***/ }),
+import { createRequire as __WEBPACK_EXTERNAL_createRequire } from "module";
+/******/ var __webpack_modules__ = ({
 
 /***/ 7351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -400,7 +102,6 @@ function escapeProperty(s) {
 /***/ 2186:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -743,7 +444,6 @@ Object.defineProperty(exports, "toPlatformPath", ({ enumerable: true, get: funct
 /***/ 717:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 // For internal use, subject to change.
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -808,7 +508,6 @@ exports.prepareKeyValueMessage = prepareKeyValueMessage;
 /***/ 8041:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -892,7 +591,6 @@ exports.OidcClient = OidcClient;
 /***/ 2981:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -957,7 +655,6 @@ exports.toPlatformPath = toPlatformPath;
 /***/ 1327:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -1247,7 +944,6 @@ exports.summary = _summary;
 /***/ 5278:
 /***/ ((__unused_webpack_module, exports) => {
 
-"use strict";
 
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -1294,7 +990,6 @@ exports.toCommandProperties = toCommandProperties;
 /***/ 8974:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1380,7 +1075,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 /***/ 5842:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1410,7 +1104,6 @@ exports["default"] = _default;
 /***/ 2381:
 /***/ ((__unused_webpack_module, exports) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1425,7 +1118,6 @@ exports["default"] = _default;
 /***/ 6385:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1477,7 +1169,6 @@ exports["default"] = _default;
 /***/ 6230:
 /***/ ((__unused_webpack_module, exports) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1492,7 +1183,6 @@ exports["default"] = _default;
 /***/ 9784:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1523,7 +1213,6 @@ function rng() {
 /***/ 8844:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1553,7 +1242,6 @@ exports["default"] = _default;
 /***/ 1458:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1599,7 +1287,6 @@ exports["default"] = _default;
 /***/ 1595:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1713,7 +1400,6 @@ exports["default"] = _default;
 /***/ 6993:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1736,7 +1422,6 @@ exports["default"] = _default;
 /***/ 5920:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1821,7 +1506,6 @@ function _default(name, version, hashfunc) {
 /***/ 1472:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1865,7 +1549,6 @@ exports["default"] = _default;
 /***/ 6217:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1888,7 +1571,6 @@ exports["default"] = _default;
 /***/ 2609:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1912,7 +1594,6 @@ exports["default"] = _default;
 /***/ 427:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -1940,7 +1621,6 @@ exports["default"] = _default;
 /***/ 1514:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -2050,7 +1730,6 @@ exports.getExecOutput = getExecOutput;
 /***/ 8159:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -2675,7 +2354,6 @@ class ExecState extends events.EventEmitter {
 /***/ 5526:
 /***/ (function(__unused_webpack_module, exports) {
 
-"use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -2763,7 +2441,6 @@ exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHand
 /***/ 6255:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -3375,7 +3052,6 @@ const lowercaseKeys = (obj) => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCa
 /***/ 9835:
 /***/ ((__unused_webpack_module, exports) => {
 
-"use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.checkBypass = exports.getProxyUrl = void 0;
@@ -3443,7 +3119,6 @@ exports.checkBypass = checkBypass;
 /***/ 1962:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -3627,7 +3302,6 @@ exports.getCmdPath = getCmdPath;
 /***/ 7436:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -3975,7 +3649,6 @@ function copyFile(srcFile, destFile, force) {
 /***/ 2473:
 /***/ (function(module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -4110,7 +3783,6 @@ exports._readLinuxVersionFile = _readLinuxVersionFile;
 /***/ 8279:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -4200,7 +3872,6 @@ exports.RetryHelper = RetryHelper;
 /***/ 7784:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -4900,14 +4571,42 @@ var MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER ||
 // Max safe segment length for coercion.
 var MAX_SAFE_COMPONENT_LENGTH = 16
 
+var MAX_SAFE_BUILD_LENGTH = MAX_LENGTH - 6
+
 // The actual regexps go on exports.re
 var re = exports.re = []
+var safeRe = exports.safeRe = []
 var src = exports.src = []
 var t = exports.tokens = {}
 var R = 0
 
 function tok (n) {
   t[n] = R++
+}
+
+var LETTERDASHNUMBER = '[a-zA-Z0-9-]'
+
+// Replace some greedy regex tokens to prevent regex dos issues. These regex are
+// used internally via the safeRe object since all inputs in this library get
+// normalized first to trim and collapse all extra whitespace. The original
+// regexes are exported for userland consumption and lower level usage. A
+// future breaking change could export the safer regex only with a note that
+// all input should have extra whitespace removed.
+var safeRegexReplacements = [
+  ['\\s', 1],
+  ['\\d', MAX_LENGTH],
+  [LETTERDASHNUMBER, MAX_SAFE_BUILD_LENGTH],
+]
+
+function makeSafeRe (value) {
+  for (var i = 0; i < safeRegexReplacements.length; i++) {
+    var token = safeRegexReplacements[i][0]
+    var max = safeRegexReplacements[i][1]
+    value = value
+      .split(token + '*').join(token + '{0,' + max + '}')
+      .split(token + '+').join(token + '{1,' + max + '}')
+  }
+  return value
 }
 
 // The following Regular Expressions can be used for tokenizing,
@@ -4919,14 +4618,14 @@ function tok (n) {
 tok('NUMERICIDENTIFIER')
 src[t.NUMERICIDENTIFIER] = '0|[1-9]\\d*'
 tok('NUMERICIDENTIFIERLOOSE')
-src[t.NUMERICIDENTIFIERLOOSE] = '[0-9]+'
+src[t.NUMERICIDENTIFIERLOOSE] = '\\d+'
 
 // ## Non-numeric Identifier
 // Zero or more digits, followed by a letter or hyphen, and then zero or
 // more letters, digits, or hyphens.
 
 tok('NONNUMERICIDENTIFIER')
-src[t.NONNUMERICIDENTIFIER] = '\\d*[a-zA-Z-][a-zA-Z0-9-]*'
+src[t.NONNUMERICIDENTIFIER] = '\\d*[a-zA-Z-]' + LETTERDASHNUMBER + '*'
 
 // ## Main Version
 // Three dot-separated numeric identifiers.
@@ -4968,7 +4667,7 @@ src[t.PRERELEASELOOSE] = '(?:-?(' + src[t.PRERELEASEIDENTIFIERLOOSE] +
 // Any combination of digits, letters, or hyphens.
 
 tok('BUILDIDENTIFIER')
-src[t.BUILDIDENTIFIER] = '[0-9A-Za-z-]+'
+src[t.BUILDIDENTIFIER] = LETTERDASHNUMBER + '+'
 
 // ## Build Metadata
 // Plus sign, followed by one or more period-separated build metadata
@@ -5048,6 +4747,7 @@ src[t.COERCE] = '(^|[^\\d])' +
               '(?:$|[^\\d])'
 tok('COERCERTL')
 re[t.COERCERTL] = new RegExp(src[t.COERCE], 'g')
+safeRe[t.COERCERTL] = new RegExp(makeSafeRe(src[t.COERCE]), 'g')
 
 // Tilde ranges.
 // Meaning is "reasonably at or greater than"
@@ -5057,6 +4757,7 @@ src[t.LONETILDE] = '(?:~>?)'
 tok('TILDETRIM')
 src[t.TILDETRIM] = '(\\s*)' + src[t.LONETILDE] + '\\s+'
 re[t.TILDETRIM] = new RegExp(src[t.TILDETRIM], 'g')
+safeRe[t.TILDETRIM] = new RegExp(makeSafeRe(src[t.TILDETRIM]), 'g')
 var tildeTrimReplace = '$1~'
 
 tok('TILDE')
@@ -5072,6 +4773,7 @@ src[t.LONECARET] = '(?:\\^)'
 tok('CARETTRIM')
 src[t.CARETTRIM] = '(\\s*)' + src[t.LONECARET] + '\\s+'
 re[t.CARETTRIM] = new RegExp(src[t.CARETTRIM], 'g')
+safeRe[t.CARETTRIM] = new RegExp(makeSafeRe(src[t.CARETTRIM]), 'g')
 var caretTrimReplace = '$1^'
 
 tok('CARET')
@@ -5093,6 +4795,7 @@ src[t.COMPARATORTRIM] = '(\\s*)' + src[t.GTLT] +
 
 // this one has to use the /g flag
 re[t.COMPARATORTRIM] = new RegExp(src[t.COMPARATORTRIM], 'g')
+safeRe[t.COMPARATORTRIM] = new RegExp(makeSafeRe(src[t.COMPARATORTRIM]), 'g')
 var comparatorTrimReplace = '$1$2$3'
 
 // Something like `1.2.3 - 1.2.4`
@@ -5121,6 +4824,14 @@ for (var i = 0; i < R; i++) {
   debug(i, src[i])
   if (!re[i]) {
     re[i] = new RegExp(src[i])
+
+    // Replace all greedy whitespace to prevent regex dos issues. These regex are
+    // used internally via the safeRe object since all inputs in this library get
+    // normalized first to trim and collapse all extra whitespace. The original
+    // regexes are exported for userland consumption and lower level usage. A
+    // future breaking change could export the safer regex only with a note that
+    // all input should have extra whitespace removed.
+    safeRe[i] = new RegExp(makeSafeRe(src[i]))
   }
 }
 
@@ -5145,7 +4856,7 @@ function parse (version, options) {
     return null
   }
 
-  var r = options.loose ? re[t.LOOSE] : re[t.FULL]
+  var r = options.loose ? safeRe[t.LOOSE] : safeRe[t.FULL]
   if (!r.test(version)) {
     return null
   }
@@ -5200,7 +4911,7 @@ function SemVer (version, options) {
   this.options = options
   this.loose = !!options.loose
 
-  var m = version.trim().match(options.loose ? re[t.LOOSE] : re[t.FULL])
+  var m = version.trim().match(options.loose ? safeRe[t.LOOSE] : safeRe[t.FULL])
 
   if (!m) {
     throw new TypeError('Invalid Version: ' + version)
@@ -5645,6 +5356,7 @@ function Comparator (comp, options) {
     return new Comparator(comp, options)
   }
 
+  comp = comp.trim().split(/\s+/).join(' ')
   debug('comparator', comp, options)
   this.options = options
   this.loose = !!options.loose
@@ -5661,7 +5373,7 @@ function Comparator (comp, options) {
 
 var ANY = {}
 Comparator.prototype.parse = function (comp) {
-  var r = this.options.loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR]
+  var r = this.options.loose ? safeRe[t.COMPARATORLOOSE] : safeRe[t.COMPARATOR]
   var m = comp.match(r)
 
   if (!m) {
@@ -5785,9 +5497,16 @@ function Range (range, options) {
   this.loose = !!options.loose
   this.includePrerelease = !!options.includePrerelease
 
-  // First, split based on boolean or ||
+  // First reduce all whitespace as much as possible so we do not have to rely
+  // on potentially slow regexes like \s*. This is then stored and used for
+  // future error messages as well.
   this.raw = range
-  this.set = range.split(/\s*\|\|\s*/).map(function (range) {
+    .trim()
+    .split(/\s+/)
+    .join(' ')
+
+  // First, split based on boolean or ||
+  this.set = this.raw.split('||').map(function (range) {
     return this.parseRange(range.trim())
   }, this).filter(function (c) {
     // throw out any that are not relevant for whatever reason
@@ -5795,7 +5514,7 @@ function Range (range, options) {
   })
 
   if (!this.set.length) {
-    throw new TypeError('Invalid SemVer Range: ' + range)
+    throw new TypeError('Invalid SemVer Range: ' + this.raw)
   }
 
   this.format()
@@ -5814,20 +5533,19 @@ Range.prototype.toString = function () {
 
 Range.prototype.parseRange = function (range) {
   var loose = this.options.loose
-  range = range.trim()
   // `1.2.3 - 1.2.4` => `>=1.2.3 <=1.2.4`
-  var hr = loose ? re[t.HYPHENRANGELOOSE] : re[t.HYPHENRANGE]
+  var hr = loose ? safeRe[t.HYPHENRANGELOOSE] : safeRe[t.HYPHENRANGE]
   range = range.replace(hr, hyphenReplace)
   debug('hyphen replace', range)
   // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
-  range = range.replace(re[t.COMPARATORTRIM], comparatorTrimReplace)
-  debug('comparator trim', range, re[t.COMPARATORTRIM])
+  range = range.replace(safeRe[t.COMPARATORTRIM], comparatorTrimReplace)
+  debug('comparator trim', range, safeRe[t.COMPARATORTRIM])
 
   // `~ 1.2.3` => `~1.2.3`
-  range = range.replace(re[t.TILDETRIM], tildeTrimReplace)
+  range = range.replace(safeRe[t.TILDETRIM], tildeTrimReplace)
 
   // `^ 1.2.3` => `^1.2.3`
-  range = range.replace(re[t.CARETTRIM], caretTrimReplace)
+  range = range.replace(safeRe[t.CARETTRIM], caretTrimReplace)
 
   // normalize spaces
   range = range.split(/\s+/).join(' ')
@@ -5835,7 +5553,7 @@ Range.prototype.parseRange = function (range) {
   // At this point, the range is completely trimmed and
   // ready to be split into comparators.
 
-  var compRe = loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR]
+  var compRe = loose ? safeRe[t.COMPARATORLOOSE] : safeRe[t.COMPARATOR]
   var set = range.split(' ').map(function (comp) {
     return parseComparator(comp, this.options)
   }, this).join(' ').split(/\s+/)
@@ -5935,7 +5653,7 @@ function replaceTildes (comp, options) {
 }
 
 function replaceTilde (comp, options) {
-  var r = options.loose ? re[t.TILDELOOSE] : re[t.TILDE]
+  var r = options.loose ? safeRe[t.TILDELOOSE] : safeRe[t.TILDE]
   return comp.replace(r, function (_, M, m, p, pr) {
     debug('tilde', comp, _, M, m, p, pr)
     var ret
@@ -5976,7 +5694,7 @@ function replaceCarets (comp, options) {
 
 function replaceCaret (comp, options) {
   debug('caret', comp, options)
-  var r = options.loose ? re[t.CARETLOOSE] : re[t.CARET]
+  var r = options.loose ? safeRe[t.CARETLOOSE] : safeRe[t.CARET]
   return comp.replace(r, function (_, M, m, p, pr) {
     debug('caret', comp, _, M, m, p, pr)
     var ret
@@ -6035,7 +5753,7 @@ function replaceXRanges (comp, options) {
 
 function replaceXRange (comp, options) {
   comp = comp.trim()
-  var r = options.loose ? re[t.XRANGELOOSE] : re[t.XRANGE]
+  var r = options.loose ? safeRe[t.XRANGELOOSE] : safeRe[t.XRANGE]
   return comp.replace(r, function (ret, gtlt, M, m, p, pr) {
     debug('xRange', comp, ret, gtlt, M, m, p, pr)
     var xM = isX(M)
@@ -6110,7 +5828,7 @@ function replaceXRange (comp, options) {
 function replaceStars (comp, options) {
   debug('replaceStars', comp, options)
   // Looseness is ignored here.  star is always as loose as it gets!
-  return comp.trim().replace(re[t.STAR], '')
+  return comp.trim().replace(safeRe[t.STAR], '')
 }
 
 // This function is passed to string.replace(re[t.HYPHENRANGE])
@@ -6436,7 +6154,7 @@ function coerce (version, options) {
 
   var match = null
   if (!options.rtl) {
-    match = version.match(re[t.COERCE])
+    match = version.match(safeRe[t.COERCE])
   } else {
     // Find the right-most coercible string that does not share
     // a terminus with a more left-ward coercible string.
@@ -6447,17 +6165,17 @@ function coerce (version, options) {
     // Stop when we get a match that ends at the string end, since no
     // coercible string can be more right-ward without the same terminus.
     var next
-    while ((next = re[t.COERCERTL].exec(version)) &&
+    while ((next = safeRe[t.COERCERTL].exec(version)) &&
       (!match || match.index + match[0].length !== version.length)
     ) {
       if (!match ||
           next.index + next[0].length !== match.index + match[0].length) {
         match = next
       }
-      re[t.COERCERTL].lastIndex = next.index + next[1].length + next[2].length
+      safeRe[t.COERCERTL].lastIndex = next.index + next[1].length + next[2].length
     }
     // leave it in a clean state
-    re[t.COERCERTL].lastIndex = -1
+    safeRe[t.COERCERTL].lastIndex = -1
   }
 
   if (match === null) {
@@ -6483,7 +6201,6 @@ module.exports = __nccwpck_require__(4219);
 /***/ 4219:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 var net = __nccwpck_require__(1808);
@@ -6837,167 +6554,569 @@ module.exports = v4;
 /***/ 9491:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("assert");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("assert");
 
 /***/ }),
 
 /***/ 2081:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("child_process");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("child_process");
 
 /***/ }),
 
 /***/ 6113:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("crypto");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("crypto");
 
 /***/ }),
 
 /***/ 2361:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("events");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("events");
 
 /***/ }),
 
 /***/ 7147:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("fs");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs");
 
 /***/ }),
 
 /***/ 3685:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("http");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("http");
 
 /***/ }),
 
 /***/ 5687:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("https");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("https");
 
 /***/ }),
 
 /***/ 1808:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("net");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("net");
 
 /***/ }),
 
 /***/ 2037:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("os");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("os");
 
 /***/ }),
 
 /***/ 1017:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("path");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("path");
 
 /***/ }),
 
 /***/ 2781:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("stream");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("stream");
 
 /***/ }),
 
 /***/ 1576:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("string_decoder");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("string_decoder");
 
 /***/ }),
 
 /***/ 9512:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("timers");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("timers");
 
 /***/ }),
 
 /***/ 4404:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("tls");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("tls");
 
 /***/ }),
 
 /***/ 3837:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("util");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("util");
 
 /***/ })
 
-/******/ 	});
+/******/ });
 /************************************************************************/
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __nccwpck_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
-/******/ 		if (cachedModule !== undefined) {
-/******/ 			return cachedModule.exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		var threw = true;
-/******/ 		try {
-/******/ 			__webpack_modules__[moduleId].call(module.exports, module, module.exports, __nccwpck_require__);
-/******/ 			threw = false;
-/******/ 		} finally {
-/******/ 			if(threw) delete __webpack_module_cache__[moduleId];
-/******/ 		}
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
+/******/ // The module cache
+/******/ var __webpack_module_cache__ = {};
+/******/ 
+/******/ // The require function
+/******/ function __nccwpck_require__(moduleId) {
+/******/ 	// Check if module is in cache
+/******/ 	var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 	if (cachedModule !== undefined) {
+/******/ 		return cachedModule.exports;
 /******/ 	}
-/******/ 	
+/******/ 	// Create a new module (and put it into the cache)
+/******/ 	var module = __webpack_module_cache__[moduleId] = {
+/******/ 		// no module.id needed
+/******/ 		// no module.loaded needed
+/******/ 		exports: {}
+/******/ 	};
+/******/ 
+/******/ 	// Execute the module function
+/******/ 	var threw = true;
+/******/ 	try {
+/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __nccwpck_require__);
+/******/ 		threw = false;
+/******/ 	} finally {
+/******/ 		if(threw) delete __webpack_module_cache__[moduleId];
+/******/ 	}
+/******/ 
+/******/ 	// Return the exports of the module
+/******/ 	return module.exports;
+/******/ }
+/******/ 
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
-/******/ 	
+/******/ /* webpack/runtime/compat */
+/******/ 
+/******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
+/******/ 
 /************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(3109);
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
-/******/ })()
-;
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
+(() => {
+
+// EXTERNAL MODULE: external "os"
+var external_os_ = __nccwpck_require__(2037);
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(1017);
+// EXTERNAL MODULE: external "util"
+var external_util_ = __nccwpck_require__(3837);
+// EXTERNAL MODULE: external "fs"
+var external_fs_ = __nccwpck_require__(7147);
+// EXTERNAL MODULE: external "https"
+var external_https_ = __nccwpck_require__(5687);
+// EXTERNAL MODULE: ./node_modules/@actions/tool-cache/lib/tool-cache.js
+var tool_cache = __nccwpck_require__(7784);
+// EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
+var core = __nccwpck_require__(2186);
+;// CONCATENATED MODULE: ./src/constants.ts
+const defaultProcessorArchType = 'amd64';
+const defaultKubectlVersion = '1.34.1';
+const defaultKustomizeVersion = '5.7.1';
+const defaultHelmVersion = '3.19.0';
+const defaultKubevalVersion = '0.16.1';
+const defaultKubeconformVersion = '0.7.0';
+const defaultConftestVersion = '0.62.0';
+const defaultYqVersion = '4.47.2';
+const defaultRancherVersion = '2.12.1';
+const defaultTiltVersion = '0.35.1';
+const defaultSkaffoldVersion = '2.16.1';
+const defaultKubeScoreVersion = '1.20.0';
+
+;// CONCATENATED MODULE: ./src/main.ts
+
+
+
+
+
+
+
+
+// Determine the processor architecture type based on the current runtime.
+// Maps Node's os.arch() to the values used by download URLs: 'amd64' | 'arm64'
+function detectArchType() {
+    const nodeArch = external_os_.arch().toLowerCase();
+    if (nodeArch === 'arm64' || nodeArch === 'aarch64') {
+        return 'arm64';
+    }
+    return defaultProcessorArchType;
+}
+const Tools = [
+    {
+        name: 'kubectl',
+        defaultVersion: defaultKubectlVersion,
+        isArchived: false,
+        supportArm: true,
+        commandPathInPackage: 'kubectl'
+    },
+    {
+        name: 'kustomize',
+        defaultVersion: defaultKustomizeVersion,
+        isArchived: true,
+        supportArm: true,
+        commandPathInPackage: 'kustomize'
+    },
+    {
+        name: 'helm',
+        defaultVersion: defaultHelmVersion,
+        isArchived: true,
+        supportArm: true,
+        commandPathInPackage: 'linux-{arch}/helm'
+    },
+    {
+        name: 'kubeval',
+        defaultVersion: defaultKubevalVersion,
+        isArchived: true,
+        supportArm: false,
+        commandPathInPackage: 'kubeval'
+    },
+    {
+        name: 'kubeconform',
+        defaultVersion: defaultKubeconformVersion,
+        isArchived: true,
+        supportArm: true,
+        commandPathInPackage: 'kubeconform'
+    },
+    {
+        name: 'conftest',
+        defaultVersion: defaultConftestVersion,
+        isArchived: true,
+        supportArm: true,
+        commandPathInPackage: 'conftest'
+    },
+    {
+        name: 'yq',
+        defaultVersion: defaultYqVersion,
+        isArchived: false,
+        supportArm: true,
+        commandPathInPackage: 'yq_linux_{arch}'
+    },
+    {
+        name: 'rancher',
+        defaultVersion: defaultRancherVersion,
+        isArchived: true,
+        supportArm: true,
+        commandPathInPackage: 'rancher-v{ver}/rancher'
+    },
+    {
+        name: 'tilt',
+        defaultVersion: defaultTiltVersion,
+        isArchived: true,
+        supportArm: true,
+        commandPathInPackage: 'tilt'
+    },
+    {
+        name: 'skaffold',
+        defaultVersion: defaultSkaffoldVersion,
+        isArchived: false,
+        supportArm: true,
+        commandPathInPackage: 'skaffold-linux-{arch}'
+    },
+    {
+        name: 'kube-score',
+        defaultVersion: defaultKubeScoreVersion,
+        isArchived: false,
+        supportArm: true,
+        commandPathInPackage: 'kube-score'
+    }
+];
+// Replace all {ver} and {arch} placeholders in the source format string with the actual values
+function replacePlaceholders(format, version, archType) {
+    return format.replace(/{ver}|{arch}/g, match => {
+        return match === '{ver}' ? version : archType;
+    });
+}
+// Perform a simple HTTPS GET and return the response body as string
+async function httpGet(url) {
+    return new Promise((resolve, reject) => {
+        const req = external_https_.get(url, {
+            headers: {
+                'User-Agent': 'yokawasa/action-setup-kube-tools',
+                Accept: 'application/vnd.github+json'
+            }
+        }, res => {
+            if (!res.statusCode) {
+                reject(new Error(`Request failed: ${url}`));
+                return;
+            }
+            if (res.statusCode >= 300 &&
+                res.statusCode < 400 &&
+                res.headers.location) {
+                //// SSRF attach protection (Disabled for now to avoid many allowed domain changes)
+                // Validate redirect location domain to avoid SSRF attack before following it.
+                // Need to add domain names to allow as needed in the future
+                // try {
+                //   const allowedDomains = [
+                //     'github.com',
+                //     'api.github.com',
+                //     'raw.githubusercontent.com',
+                //     'dl.k8s.io',
+                //     'cdn.dl.k8s.io',
+                //     'get.helm.sh',
+                //     'storage.googleapis.com'
+                //   ]
+                //   const redirectUrl = new URL(res.headers.location, url)
+                //   if (!allowedDomains.includes(redirectUrl.hostname)) {
+                //     reject(
+                //       new Error(
+                //         `Redirect to disallowed domain: ${redirectUrl.hostname}`
+                //       )
+                //     )
+                //     return
+                //   }
+                //   httpGet(redirectUrl.toString())
+                //     .then(resolve)
+                //     .catch(reject)
+                // } catch (e) {
+                //   reject(new Error(`Invalid redirect URL: ${res.headers.location}`))
+                // }
+                //// Follow the redirect
+                httpGet(res.headers.location)
+                    .then(resolve)
+                    .catch(reject);
+                return;
+            }
+            if (res.statusCode < 200 || res.statusCode >= 300) {
+                reject(new Error(`Request failed: ${url} (status ${res.statusCode})`));
+                return;
+            }
+            let data = '';
+            res.on('data', chunk => (data += chunk));
+            res.on('end', () => resolve(data));
+        });
+        req.on('error', reject);
+    });
+}
+// Normalize tag to a bare version (strip prefixes like 'v' or 'kustomize/v')
+function normalizeTagToVersion(tag, toolName) {
+    let t = tag.trim();
+    if (toolName === 'kustomize') {
+        if (t.startsWith('kustomize/')) {
+            t = t.substring('kustomize/'.length);
+        }
+    }
+    if (t.startsWith('v') || t.startsWith('V')) {
+        t = t.substring(1);
+    }
+    return t;
+}
+async function getLatestVersion(toolName) {
+    try {
+        if (toolName === 'kubectl') {
+            const body = await httpGet('https://dl.k8s.io/release/stable.txt');
+            return normalizeTagToVersion(body, toolName);
+        }
+        const repoMap = {
+            kustomize: 'kubernetes-sigs/kustomize',
+            helm: 'helm/helm',
+            kubeval: 'instrumenta/kubeval',
+            kubeconform: 'yannh/kubeconform',
+            conftest: 'open-policy-agent/conftest',
+            yq: 'mikefarah/yq',
+            rancher: 'rancher/cli',
+            tilt: 'tilt-dev/tilt',
+            skaffold: 'GoogleContainerTools/skaffold',
+            'kube-score': 'zegl/kube-score'
+        };
+        const repo = repoMap[toolName];
+        if (!repo) {
+            throw new Error(`Unsupported tool for latest lookup: ${toolName}`);
+        }
+        const api = `https://api.github.com/repos/${repo}/releases/latest`;
+        const json = await httpGet(api);
+        let meta;
+        try {
+            meta = JSON.parse(json);
+        }
+        catch (e) {
+            // Truncate the response for safety if it's too long: #75
+            const truncatedJson = json && json.length > 500
+                ? json.substring(0, 500) + '...[truncated]'
+                : json;
+            throw new Error(`Failed to parse JSON response from ${api} for ${toolName}: ${e}. Response: ${truncatedJson}`);
+        }
+        if (!meta || !meta.tag_name) {
+            throw new Error(`Unexpected response resolving latest for ${toolName}`);
+        }
+        return normalizeTagToVersion(String(meta.tag_name), toolName);
+    }
+    catch (e) {
+        throw new Error(`Failed to resolve latest version for ${toolName}: ${e}`);
+    }
+}
+function getDownloadURL(commandName, version, archType) {
+    let actualArchType = archType;
+    let urlFormat = '';
+    switch (commandName) {
+        case 'kubectl':
+            urlFormat = 'https://dl.k8s.io/release/v{ver}/bin/linux/{arch}/kubectl';
+            break;
+        case 'kustomize':
+            urlFormat =
+                'https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv{ver}/kustomize_v{ver}_linux_{arch}.tar.gz';
+            break;
+        case 'helm':
+            urlFormat = 'https://get.helm.sh/helm-v{ver}-linux-{arch}.tar.gz';
+            break;
+        case 'kubeval':
+            actualArchType = 'amd64'; // kubeval only supports amd64
+            urlFormat =
+                'https://github.com/instrumenta/kubeval/releases/download/v{ver}/kubeval-linux-{arch}.tar.gz';
+            break;
+        case 'kubeconform':
+            urlFormat =
+                'https://github.com/yannh/kubeconform/releases/download/v{ver}/kubeconform-linux-{arch}.tar.gz';
+            break;
+        case 'conftest':
+            actualArchType = archType === 'arm64' ? archType : 'x86_64';
+            urlFormat =
+                'https://github.com/open-policy-agent/conftest/releases/download/v{ver}/conftest_{ver}_Linux_{arch}.tar.gz';
+            break;
+        case 'yq':
+            urlFormat =
+                'https://github.com/mikefarah/yq/releases/download/v{ver}/yq_linux_{arch}';
+            break;
+        case 'rancher':
+            actualArchType = archType === 'arm64' ? 'arm' : archType;
+            urlFormat =
+                'https://github.com/rancher/cli/releases/download/v{ver}/rancher-linux-{arch}-v{ver}.tar.gz';
+            break;
+        case 'tilt':
+            actualArchType = archType === 'arm64' ? archType : 'x86_64';
+            urlFormat =
+                'https://github.com/tilt-dev/tilt/releases/download/v{ver}/tilt.{ver}.linux.{arch}.tar.gz';
+            break;
+        case 'skaffold':
+            urlFormat =
+                'https://github.com/GoogleContainerTools/skaffold/releases/download/v{ver}/skaffold-linux-{arch}';
+            break;
+        case 'kube-score':
+            urlFormat =
+                'https://github.com/zegl/kube-score/releases/download/v{ver}/kube-score_{ver}_linux_{arch}';
+            break;
+        default:
+            return '';
+    }
+    return replacePlaceholders(urlFormat, version, actualArchType);
+}
+async function downloadTool(version, archType, tool) {
+    let cachedToolPath = tool_cache.find(tool.name, version);
+    let commandPathInPackage = tool.commandPathInPackage;
+    let commandPath = '';
+    if (!cachedToolPath) {
+        const downloadURL = getDownloadURL(tool.name, version, archType);
+        try {
+            const packagePath = await tool_cache.downloadTool(downloadURL);
+            if (tool.isArchived) {
+                const extractTarBaseDirPath = external_util_.format('%s_%s', packagePath, tool.name);
+                external_fs_.mkdirSync(extractTarBaseDirPath);
+                const extractedDirPath = await tool_cache.extractTar(packagePath, extractTarBaseDirPath);
+                commandPathInPackage = replacePlaceholders(commandPathInPackage, version, archType);
+                commandPath = external_util_.format('%s/%s', extractedDirPath, commandPathInPackage);
+            }
+            else {
+                commandPath = packagePath;
+            }
+        }
+        catch (exception) {
+            throw new Error(`Download ${tool.name} Failed! (url: ${downloadURL})`);
+        }
+        cachedToolPath = await tool_cache.cacheFile(commandPath, tool.name, tool.name, version);
+        // eslint-disable-next-line no-console
+        console.log(`${tool.name} version '${version}' has been cached`);
+    }
+    else {
+        // eslint-disable-next-line no-console
+        console.log(`Found in cache: ${tool.name} version '${version}'`);
+    }
+    const cachedCommand = external_path_.join(cachedToolPath, tool.name);
+    external_fs_.chmodSync(cachedCommand, '777');
+    return cachedCommand;
+}
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+async function run() {
+    if (!external_os_.type().match(/^Linux/)) {
+        throw new Error('The action only support Linux OS!');
+    }
+    let failFast = true;
+    if (core.getInput('fail-fast', { required: false }).toLowerCase() === 'false') {
+        failFast = false;
+    }
+    // Auto-detect architecture; allow explicit override to 'amd64' or 'arm64' if provided.
+    let archType = detectArchType();
+    console.log(`Detected archType: ${archType}`);
+    const inputArch = core.getInput('arch-type', { required: false }).toLowerCase();
+    console.log(`input archType: ${inputArch}`);
+    if (inputArch === 'arm64' || inputArch === 'amd64') {
+        archType = inputArch;
+    }
+    let setupToolList = [];
+    const setupTools = core.getInput('setup-tools', { required: false }).trim();
+    if (setupTools) {
+        setupToolList = setupTools
+            .split('\n')
+            .map(function (x) {
+            return x.trim();
+        })
+            .filter(x => x !== '');
+    }
+    // eslint-disable-next-line github/array-foreach
+    Tools.forEach(async function (tool) {
+        let toolPath = '';
+        // By default, the action setup all supported Kubernetes tools, which mean
+        // all tools can be setup when setuptools does not have any elements.
+        if (setupToolList.length === 0 || setupToolList.includes(tool.name)) {
+            let toolVersion = core.getInput(tool.name, { required: false })
+                .toLowerCase();
+            if (toolVersion && toolVersion.startsWith('v')) {
+                toolVersion = toolVersion.substr(1);
+            }
+            if (!toolVersion) {
+                toolVersion = tool.defaultVersion;
+            }
+            if (toolVersion === 'latest') {
+                try {
+                    const resolved = await getLatestVersion(tool.name);
+                    // eslint-disable-next-line no-console
+                    console.log(`Resolved latest for ${tool.name}: ${resolved}`);
+                    toolVersion = resolved;
+                }
+                catch (e) {
+                    if (failFast) {
+                        // eslint-disable-next-line no-console
+                        console.log(`Exiting immediately (fail fast) - [Reason] ${e}`);
+                        process.exit(1);
+                    }
+                    else {
+                        throw new Error(`Cannot resolve a version for ${tool.name}.`);
+                    }
+                }
+            }
+            if (archType === 'arm64' && !tool.supportArm) {
+                // eslint-disable-next-line no-console
+                console.log(`The ${tool.name} does not support arm64 architecture, skip it`);
+                return;
+            }
+            try {
+                const cachedPath = await downloadTool(toolVersion, archType, tool);
+                core.addPath(external_path_.dirname(cachedPath));
+                toolPath = cachedPath;
+            }
+            catch (exception) {
+                if (failFast) {
+                    // eslint-disable-next-line no-console
+                    console.log(`Exiting immediately (fail fast) - [Reason] ${exception}`);
+                    process.exit(1);
+                }
+            }
+        }
+        core.setOutput(`${tool.name}-path`, toolPath);
+    });
+}
+run().catch(core.setFailed);
+
+})();
+
