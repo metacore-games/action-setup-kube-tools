@@ -2,24 +2,35 @@ import * as os from 'os'
 import * as path from 'path'
 import * as util from 'util'
 import * as fs from 'fs'
+import * as https from 'https'
 
 import * as toolCache from '@actions/tool-cache'
 import * as core from '@actions/core'
 
-const defaultProcessorArchType = 'amd64'
+import {
+  defaultProcessorArchType,
+  defaultKubectlVersion,
+  defaultKustomizeVersion,
+  defaultHelmVersion,
+  defaultKubevalVersion,
+  defaultKubeconformVersion,
+  defaultConftestVersion,
+  defaultYqVersion,
+  defaultRancherVersion,
+  defaultTiltVersion,
+  defaultSkaffoldVersion,
+  defaultKubeScoreVersion
+} from './constants'
 
-const defaultKubectlVersion = '1.24.10'
-const defaultKustomizeVersion = '5.0.0'
-const defaultHelmVersion = '3.11.1'
-const defaultKubevalVersion = '0.16.1'
-const defaultKubeconformVersion = '0.5.0'
-const defaultConftestVersion = '0.39.0'
-const defaultYqVersion = '4.30.7'
-const defaultRancherVersion = '2.7.0'
-const defaultTiltVersion = '0.31.2'
-const defaultSkaffoldVersion = '2.1.0'
-const defaultKubeScoreVersion = '1.16.1'
-
+// Determine the processor architecture type based on the current runtime.
+// Maps Node's os.arch() to the values used by download URLs: 'amd64' | 'arm64'
+function detectArchType(): string {
+  const nodeArch = os.arch().toLowerCase()
+  if (nodeArch === 'arm64' || nodeArch === 'aarch64') {
+    return 'arm64'
+  }
+  return defaultProcessorArchType
+}
 interface Tool {
   name: string
   defaultVersion: string
@@ -119,6 +130,136 @@ function replacePlaceholders(
   })
 }
 
+// Perform a simple HTTPS GET and return the response body as string
+async function httpGet(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const req = https.get(
+      url,
+      {
+        headers: {
+          'User-Agent': 'yokawasa/action-setup-kube-tools',
+          Accept: 'application/vnd.github+json'
+        }
+      },
+      res => {
+        if (!res.statusCode) {
+          reject(new Error(`Request failed: ${url}`))
+          return
+        }
+        if (
+          res.statusCode >= 300 &&
+          res.statusCode < 400 &&
+          res.headers.location
+        ) {
+          //// SSRF attach protection (Disabled for now to avoid many allowed domain changes)
+          // Validate redirect location domain to avoid SSRF attack before following it.
+          // Need to add domain names to allow as needed in the future
+          // try {
+          //   const allowedDomains = [
+          //     'github.com',
+          //     'api.github.com',
+          //     'raw.githubusercontent.com',
+          //     'dl.k8s.io',
+          //     'cdn.dl.k8s.io',
+          //     'get.helm.sh',
+          //     'storage.googleapis.com'
+          //   ]
+          //   const redirectUrl = new URL(res.headers.location, url)
+          //   if (!allowedDomains.includes(redirectUrl.hostname)) {
+          //     reject(
+          //       new Error(
+          //         `Redirect to disallowed domain: ${redirectUrl.hostname}`
+          //       )
+          //     )
+          //     return
+          //   }
+          //   httpGet(redirectUrl.toString())
+          //     .then(resolve)
+          //     .catch(reject)
+          // } catch (e) {
+          //   reject(new Error(`Invalid redirect URL: ${res.headers.location}`))
+          // }
+
+          //// Follow the redirect
+          httpGet(res.headers.location)
+            .then(resolve)
+            .catch(reject)
+          return
+        }
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error(`Request failed: ${url} (status ${res.statusCode})`))
+          return
+        }
+        let data = ''
+        res.on('data', chunk => (data += chunk))
+        res.on('end', () => resolve(data))
+      }
+    )
+    req.on('error', reject)
+  })
+}
+
+// Normalize tag to a bare version (strip prefixes like 'v' or 'kustomize/v')
+function normalizeTagToVersion(tag: string, toolName: string): string {
+  let t = tag.trim()
+  if (toolName === 'kustomize') {
+    if (t.startsWith('kustomize/')) {
+      t = t.substring('kustomize/'.length)
+    }
+  }
+  if (t.startsWith('v') || t.startsWith('V')) {
+    t = t.substring(1)
+  }
+  return t
+}
+
+async function getLatestVersion(toolName: string): Promise<string> {
+  try {
+    if (toolName === 'kubectl') {
+      const body = await httpGet('https://dl.k8s.io/release/stable.txt')
+      return normalizeTagToVersion(body, toolName)
+    }
+
+    const repoMap: {[key: string]: string} = {
+      kustomize: 'kubernetes-sigs/kustomize',
+      helm: 'helm/helm',
+      kubeval: 'instrumenta/kubeval',
+      kubeconform: 'yannh/kubeconform',
+      conftest: 'open-policy-agent/conftest',
+      yq: 'mikefarah/yq',
+      rancher: 'rancher/cli',
+      tilt: 'tilt-dev/tilt',
+      skaffold: 'GoogleContainerTools/skaffold',
+      'kube-score': 'zegl/kube-score'
+    }
+    const repo = repoMap[toolName]
+    if (!repo) {
+      throw new Error(`Unsupported tool for latest lookup: ${toolName}`)
+    }
+    const api = `https://api.github.com/repos/${repo}/releases/latest`
+    const json = await httpGet(api)
+    let meta
+    try {
+      meta = JSON.parse(json)
+    } catch (e) {
+      // Truncate the response for safety if it's too long: #75
+      const truncatedJson =
+        json && json.length > 500
+          ? json.substring(0, 500) + '...[truncated]'
+          : json
+      throw new Error(
+        `Failed to parse JSON response from ${api} for ${toolName}: ${e}. Response: ${truncatedJson}`
+      )
+    }
+    if (!meta || !meta.tag_name) {
+      throw new Error(`Unexpected response resolving latest for ${toolName}`)
+    }
+    return normalizeTagToVersion(String(meta.tag_name), toolName)
+  } catch (e) {
+    throw new Error(`Failed to resolve latest version for ${toolName}: ${e}`)
+  }
+}
+
 function getDownloadURL(
   commandName: string,
   version: string,
@@ -128,8 +269,7 @@ function getDownloadURL(
   let urlFormat = ''
   switch (commandName) {
     case 'kubectl':
-      urlFormat =
-        'https://storage.googleapis.com/kubernetes-release/release/v{ver}/bin/linux/{arch}/kubectl'
+      urlFormat = 'https://dl.k8s.io/release/v{ver}/bin/linux/{arch}/kubectl'
       break
     case 'kustomize':
       urlFormat =
@@ -254,9 +394,13 @@ async function run() {
     failFast = false
   }
 
-  let archType = defaultProcessorArchType
-  if (core.getInput('arch-type', {required: false}).toLowerCase() === 'arm64') {
-    archType = 'arm64'
+  // Auto-detect architecture; allow explicit override to 'amd64' or 'arm64' if provided.
+  let archType = detectArchType()
+  console.log(`Detected archType: ${archType}`)
+  const inputArch = core.getInput('arch-type', {required: false}).toLowerCase()
+  console.log(`input archType: ${inputArch}`)
+  if (inputArch === 'arm64' || inputArch === 'amd64') {
+    archType = inputArch
   }
 
   let setupToolList: string[] = []
@@ -284,6 +428,22 @@ async function run() {
       }
       if (!toolVersion) {
         toolVersion = tool.defaultVersion
+      }
+      if (toolVersion === 'latest') {
+        try {
+          const resolved = await getLatestVersion(tool.name)
+          // eslint-disable-next-line no-console
+          console.log(`Resolved latest for ${tool.name}: ${resolved}`)
+          toolVersion = resolved
+        } catch (e) {
+          if (failFast) {
+            // eslint-disable-next-line no-console
+            console.log(`Exiting immediately (fail fast) - [Reason] ${e}`)
+            process.exit(1)
+          } else {
+            throw new Error(`Cannot resolve a version for ${tool.name}.`)
+          }
+        }
       }
       if (archType === 'arm64' && !tool.supportArm) {
         // eslint-disable-next-line no-console
