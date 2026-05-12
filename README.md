@@ -1,7 +1,11 @@
 [![action-setup-kube-tools Test](https://github.com/yokawasa/action-setup-kube-tools/actions/workflows/test.yml/badge.svg)](https://github.com/yokawasa/action-setup-kube-tools/actions/workflows/test.yml)
 
 # action-setup-kube-tools
+
 A GitHub Action that setup Kubernetes tools (kubectl, kustomize, helm, kubeconform, conftest, yq, rancher, tilt, skaffold, kube-score) and cache them on the runner. It is like a typescript version of [stefanprodan/kube-tools](https://github.com/stefanprodan/kube-tools) with no command input param, but as compared with [it](https://github.com/stefanprodan/kube-tools), it's **very fast** as it installs the tools asynchronously.
+
+> [!NOTE]
+> This repository enforces immutable releases — published release tags and assets cannot be modified or deleted, ensuring supply chain integrity.
 
 ## Usage
 
@@ -11,17 +15,17 @@ A GitHub Action that setup Kubernetes tools (kubectl, kustomize, helm, kubeconfo
 |:--:|:--:|:--:|:--|
 |`fail-fast`|`false`|`true`| the action immediately fails when it fails to download (ie. due to a bad version) |
 |`arch-type`|`false`|`""`| Optional. The processor architecture type of the tool binary to setup. The action will auto-detect the architecture (`amd64` or `arm64`) and use it as appropriate at runtime. Specify the architecture type (`amd64` or `arm64`) only if you need to force it.|
-|`setup-tools`|`false`|`""`|List of tool name to setup. By default, the action download and setup all supported Kubernetes tools. By specifying `setup-tools` you can choose which tools the action setup. Supported separator is `return` in multi-line string. Supported tools are `kubectl`, `kustomize`, `helm`, `helmv3`,  `kubeval`, `conftest`, `yq`, `rancher`, `tilt`, `skaffold`, `kube-score`|
-|`kubectl`|`false`|`1.34.1`| kubectl version or `latest`. kubectl versions can be found [here](https://github.com/kubernetes/kubernetes/releases)|
-|`kustomize`|`false`|`5.7.1`| kustomize version or `latest`. kustomize versions can be found [here](https://github.com/kubernetes-sigs/kustomize/releases)|
-|`helm`|`false`|`3.19.0`| helm version or `latest`. helm versions can be found [here](https://github.com/helm/helm/releases)|
+|`setup-tools`|`false`|`""`|List of tool name to setup. By default, the action download and setup all supported Kubernetes tools. By specifying `setup-tools` you can choose which tools the action setup. Supported separator is `return` in multi-line string. Supported tools are `kubectl`, `kustomize`, `helm`, `kubeval`, `conftest`, `yq`, `rancher`, `tilt`, `skaffold`, `kube-score`|
+|`kubectl`|`false`|`1.35.3`| kubectl version or `latest`. kubectl versions can be found [here](https://github.com/kubernetes/kubernetes/releases)|
+|`kustomize`|`false`|`5.8.1`| kustomize version or `latest`. kustomize versions can be found [here](https://github.com/kubernetes-sigs/kustomize/releases)|
+|`helm`|`false`|`3.20.1`| helm version or `latest`. helm versions can be found [here](https://github.com/helm/helm/releases)|
 |`kubeval`|`false`|`0.16.1`| kubeval version (must be **0.16.1+**) or `latest`. kubeval versions can be found [here](https://github.com/instrumenta/kubeval/releases).<br> NOTE: this parameter is deprecating as `kubeval` is no longer maintained. A good replacement is [kubeconform](https://github.com/yannh/kubeconform). See also [this](https://github.com/instrumenta/kubeval) for more details.|
 |`kubeconform`|`false`|`0.7.0`| kubeconform version or `latest`. kubeconform versions can be found [here](https://github.com/yannh/kubeconform/releases)|
-|`conftest`|`false`|`0.62.0`| conftest version or `latest`. conftest versions can be found [here](https://github.com/open-policy-agent/conftest/releases)|
-|`yq`|`false`|`4.47.2`| yq version or `latest`. yq versions can be found [here](https://github.com/mikefarah/yq/releases/)|
-|`rancher`|`false`|`2.12.1`| Rancher CLI version or `latest`. Rancher CLI versions can be found [here](https://github.com/rancher/cli/releases)|
-|`tilt`|`false`|`0.35.1`| Tilt version or `latest`. Tilt versions can be found [here](https://github.com/tilt-dev/tilt/releases)|
-|`skaffold`|`false`|`2.16.1`| Skaffold version or `latest`. Skaffold versions can be found [here](https://github.com/GoogleContainerTools/skaffold/releases)|
+|`conftest`|`false`|`0.67.1`| conftest version or `latest`. conftest versions can be found [here](https://github.com/open-policy-agent/conftest/releases)|
+|`yq`|`false`|`4.52.5`| yq version or `latest`. yq versions can be found [here](https://github.com/mikefarah/yq/releases/)|
+|`rancher`|`false`|`2.13.3`| Rancher CLI version or `latest`. Rancher CLI versions can be found [here](https://github.com/rancher/cli/releases)|
+|`tilt`|`false`|`0.37.0`| Tilt version or `latest`. Tilt versions can be found [here](https://github.com/tilt-dev/tilt/releases)|
+|`skaffold`|`false`|`2.18.1`| Skaffold version or `latest`. Skaffold versions can be found [here](https://github.com/GoogleContainerTools/skaffold/releases)|
 |`kube-score`|`false`|`1.20.0`| kube-score version or `latest`. kube-score versions can be found [here](https://github.com/zegl/kube-score/releases)|
 
 > [!NOTE]
@@ -53,16 +57,16 @@ Pinned versions (reproducible):
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: yokawasa/action-setup-kube-tools@v0.13.1
+    - uses: yokawasa/action-setup-kube-tools@v0.13.5
       with:
-        kubectl: '1.34.1'
-        kustomize: '5.7.1'
-        helm: '3.19.0'
+        kubectl: '1.35.3'
+        kustomize: '5.8.1'
+        helm: '3.20.1'
         kubeconform: '0.7.0'
-        conftest: '0.62.0'
-        rancher: '2.12.1'
-        tilt: '0.35.2'
-        skaffold: '2.16.1'
+        conftest: '0.67.1'
+        rancher: '2.13.3'
+        tilt: '0.37.0'
+        skaffold: '2.18.1'
         kube-score: '1.20.0'
     - run: |
         kubectl version --client
@@ -84,7 +88,7 @@ Default versions for the commands will be setup if you don't give any inputs lik
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: yokawasa/action-setup-kube-tools@v0.13.1
+    - uses: yokawasa/action-setup-kube-tools@v0.13.5
     - run: |
         kubectl version --client
         kustomize version
@@ -105,7 +109,7 @@ By specifying setup-tools you can choose which tools the action setup. Supported
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: yokawasa/action-setup-kube-tools@v0.13.1
+    - uses: yokawasa/action-setup-kube-tools@v0.13.5
       with:
         setup-tools: |
           kubectl
@@ -129,7 +133,7 @@ Architecture is automatically detected on the runner (amd64 or arm64). You can o
   test: 
     steps:
     - uses: actions/checkout@v4
-    - uses: yokawasa/action-setup-kube-tools@v0.13.1
+    - uses: yokawasa/action-setup-kube-tools@v0.13.5
       with:
         # arch-type is optional; uncomment to force arm64
         # arch-type: 'arm64'
@@ -155,7 +159,7 @@ Explicit latest inputs (optional):
   test: 
     steps:
     - uses: actions/checkout@v4
-    - uses: yokawasa/action-setup-kube-tools@v0.13.1
+    - uses: yokawasa/action-setup-kube-tools@v0.13.5
       with:
         # arch-type is optional; uncomment to force arm64
         # arch-type: 'arm64'
